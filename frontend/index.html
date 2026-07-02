@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+</head>
+
+<body>
+  
+</body>
+
+</html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Asentinel — The market under surveillance. Seven AI trading agents in one anonymous command center." />
+    <meta name="theme-color" content="#080810" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Asentinel" />
+    <meta property="og:description" content="The market under surveillance. Seven AI trading agents." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://asentinel.app" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Asentinel" />
+    <meta name="twitter:description" content="The market under surveillance." />
+
+    <title>Asentinel — Anonymous Trading Intelligence</title>
+
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { background: #080810; color: #E8E8E8; font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace; }
+      #root { min-height: 100vh; }
+      /* Prevent flash of unstyled content */
+      body { opacity: 0; transition: opacity 0.15s; }
+      body.ready { opacity: 1; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>document.body.classList.add("ready");</script>
+  </body>
+</html>
