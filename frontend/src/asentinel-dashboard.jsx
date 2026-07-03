@@ -11,6 +11,7 @@ const API = import.meta?.env?.VITE_API_URL || "http://localhost:3001";
 
 const PLANS = {
   free:  { label: "FREE",  color: C.muted, price: "$0" },
+  trial: { label: "TRIAL", color: C.gold,  price: "7-day free" },
   pro:   { label: "PRO",   color: C.green, price: "$29/mo" },
   elite: { label: "ELITE", color: C.gold,  price: "$79/mo" },
 };
@@ -107,8 +108,8 @@ export default function Dashboard({ onLogout }) {
     </div>
   );
 
-  const plan = user?.plan || "free";
-  const planInfo = PLANS[plan];
+  const plan = user?.effectivePlan || user?.plan || "free";
+  const planInfo = PLANS[plan] || PLANS["free"];
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: mono, color: C.text }}>
@@ -178,6 +179,35 @@ export default function Dashboard({ onLogout }) {
             )}
           </div>
         </Card>
+
+        {/* Trial banner */}
+        {user?.onTrial && (
+          <div style={{
+            background: `${C.gold}12`, border: `1px solid ${C.gold}40`,
+            borderRadius: 14, padding: "16px 20px", marginBottom: 16,
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+          }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.gold, fontWeight: 700, marginBottom: 4, letterSpacing: "0.06em" }}>
+                ◆ FREE TRIAL ACTIVE
+              </div>
+              <div style={{ fontSize: 13, color: C.text, fontWeight: 700 }}>
+                {user.daysLeft} day{user.daysLeft !== 1 ? "s" : ""} left — full Pro access
+              </div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
+                All 7 agents + Live Desk unlocked until trial ends
+              </div>
+            </div>
+            <button onClick={() => handleUpgrade("pro")} style={{
+              flexShrink: 0, padding: "9px 14px", borderRadius: 8,
+              background: C.gold, border: "none", color: "#000",
+              fontWeight: 800, fontSize: 11, cursor: "pointer",
+              fontFamily: mono, letterSpacing: "0.04em",
+            }}>
+              {user.daysLeft <= 2 ? "Upgrade now!" : "Go Pro →"}
+            </button>
+          </div>
+        )}
 
         {/* Agent access */}
         <Card style={{ marginBottom: 16 }}>

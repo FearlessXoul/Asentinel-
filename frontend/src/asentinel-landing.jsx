@@ -221,7 +221,7 @@ export default function Landing() {
         padding: "100px 24px 60px", textAlign: "center",
       }}>
         <div style={{ fontSize: 9, letterSpacing: "0.2em", color: C.green, marginBottom: 20, animation: "fadeUp 0.6s ease" }}>
-          ANONYMOUS TRADING INTELLIGENCE
+          14-DAY FREE TRIAL · NO CARD REQUIRED
         </div>
         <h1 style={{
           fontSize: "clamp(32px, 7vw, 64px)", fontWeight: 900,
@@ -244,7 +244,7 @@ export default function Landing() {
             background: C.gold, border: "none", color: "#000", fontWeight: 800,
             padding: "14px 28px", borderRadius: 10, fontSize: 13, cursor: "pointer",
             fontFamily: mono, letterSpacing: "0.04em",
-          }}>Start free → </button>
+          }}>Start 14-day free trial →</button>
           <button onClick={scrollToPricing} style={{
             background: "none", border: `1px solid ${C.border}`, color: C.muted,
             padding: "14px 22px", borderRadius: 10, fontSize: 12, cursor: "pointer",
@@ -339,7 +339,7 @@ export default function Landing() {
               { text: "No Desk access", dim: true },
               { text: "No memory", dim: true },
             ]}
-            cta="Start free"
+            cta="Start free trial"
           />
           <PlanCard
             name="PRO" price="$29" period="mo" color={C.green} highlight badge="MOST POPULAR"
@@ -371,10 +371,10 @@ export default function Landing() {
       <section style={{ padding: "80px 24px", textAlign: "center", maxWidth: 500, margin: "0 auto" }}>
         <div style={{ fontSize: 9, color: C.green, letterSpacing: "0.16em", marginBottom: 14 }}>EARLY ACCESS</div>
         <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 10 }}>
-          Be first in.<br /><span style={{ color: C.green }}>Get 30 days Pro free.</span>
+          Be first in.<br /><span style={{ color: C.green }}>Get 14 days full access. Free.</span>
         </h2>
         <p style={{ fontSize: 12, color: C.muted, marginBottom: 24, lineHeight: 1.7 }}>
-          Join the waitlist. First 100 traders get a free Pro month.
+          Join the waitlist. First 100 traders get instant full access — no card required.
         </p>
         {submitted ? (
           <div style={{

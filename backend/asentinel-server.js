@@ -48,6 +48,7 @@ async function initDB() {
       stripe_customer_id TEXT,
       stripe_subscription_id TEXT,
       daily_message_count INTEGER DEFAULT 0,
+      trial_ends_at BIGINT DEFAULT 0,
       daily_reset_date TEXT DEFAULT '',
       created_at INTEGER DEFAULT EXTRACT(EPOCH FROM NOW())
     );
@@ -118,13 +119,14 @@ app.post("/auth/signup", async (req, res) => {
   }
   try {
     const hash = await bcrypt.hash(password, 12);
+    const trialEndsAt = Math.floor(Date.now() / 1000) + (14 * 24 * 60 * 60); // 7 days from now
     const result = await pool.query(
-      "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email",
-      [email.toLowerCase(), hash]
+      "INSERT INTO users (email, password_hash, trial_ends_at) VALUES ($1, $2, $3) RETURNING id, email",
+      [email.toLowerCase(), hash, trialEndsAt]
     );
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || "asentinel_dev_secret", { expiresIn: "30d" });
-    res.json({ token, plan: "free" });
+    res.json({ token, plan: "trial", trialEndsAt });
   } catch (e) {
     if (e.message.includes("unique") || e.message.includes("duplicate")) {
       return res.status(409).json({ error: "Email already exists" });
@@ -144,8 +146,12 @@ app.post("/auth/login", async (req, res) => {
 });
 
 app.get("/auth/me", requireAuth, async (req, res) => {
-  const user = await db.get("SELECT id, email, plan, created_at FROM users WHERE id = $1", [req.user.id]);
-  res.json(user);
+  const user = await db.get("SELECT id, email, plan, trial_ends_at, created_at FROM users WHERE id = $1", [req.user.id]);
+  const now = Math.floor(Date.now() / 1000);
+  const onTrial = user.trial_ends_at > now && user.plan === "free";
+  const effectivePlan = onTrial ? "trial" : user.plan;
+  const daysLeft = onTrial ? Math.ceil((user.trial_ends_at - now) / 86400) : 0;
+  res.json({ ...user, effectivePlan, onTrial, daysLeft });
 });
 
 // ─── CLAUDE PROXY ─────────────────────────────────────────────────────────────
@@ -166,12 +172,15 @@ app.post("/chat", requireAuth, async (req, res) => {
   if (!mode || !messages) return res.status(400).json({ error: "Missing mode or messages" });
 
   const user = await db.get("SELECT * FROM users WHERE id = $1", [req.user.id]);
-  const allowed = AGENT_ACCESS[user.plan] || AGENT_ACCESS.free;
+  const now = Math.floor(Date.now() / 1000);
+  const onTrial = user.trial_ends_at > now && user.plan === "free";
+  const effectivePlan = onTrial ? "pro" : user.plan;
+  const allowed = AGENT_ACCESS[effectivePlan] || AGENT_ACCESS.free;
   if (!allowed.includes(mode)) {
     return res.status(403).json({ error: "upgrade_required", message: `${mode} requires Pro or Elite` });
   }
 
-  if (user.plan === "free") {
+  if (user.plan === "free" && !onTrial) {
     const today = new Date().toISOString().slice(0, 10);
     if (user.daily_reset_date !== today) {
       await pool.query("UPDATE users SET daily_message_count = 0, daily_reset_date = $1 WHERE id = $2", [today, user.id]);
