@@ -178,8 +178,8 @@ const Signup = ({ onSuccess, onSwitch }) => {
 };
 
 // ─── Auth shell ───────────────────────────────────────────────────────────────
-export default function AuthPage({ onSuccess }) {
-  const [mode, setMode] = useState("login");
+export default function AuthPage({ onSuccess, onBack, defaultMode = "signup" }) {
+  const [mode, setMode] = useState(defaultMode);
 
   return (
     <div style={{
@@ -207,6 +207,13 @@ export default function AuthPage({ onSuccess }) {
         background: C.bg2, border: `1px solid ${C.border}`,
         borderRadius: 16, padding: "36px 28px",
       }}>
+        {onBack && (
+          <button onClick={onBack} style={{
+            background: "none", border: "none", color: C.muted,
+            fontSize: 11, cursor: "pointer", marginBottom: 16,
+            display: "flex", alignItems: "center", gap: 4, fontFamily: mono,
+          }}>← Back</button>
+        )}
         {mode === "login"
           ? <Login onSuccess={onSuccess} onSwitch={() => setMode("signup")} />
           : <Signup onSuccess={onSuccess} onSwitch={() => setMode("login")} />

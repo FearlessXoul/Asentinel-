@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+:import { useState, useEffect, useRef } from "react";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -159,7 +159,7 @@ const SectionLabel = ({ text }) => (
 );
 
 // ─── Nav ──────────────────────────────────────────────────────────────────────
-const Nav = ({ onCTA }) => (
+const Nav = ({ onCTA, onLogin }) => (
   <nav style={{
     position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
     background: "rgba(8,8,16,0.85)", backdropFilter: "blur(16px)",
@@ -186,12 +186,13 @@ const Nav = ({ onCTA }) => (
 );
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function Landing() {
+export default function Landing({ onLogin, onSignup }) {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const pricingRef = useRef(null);
 
   const scrollToPricing = () => pricingRef.current?.scrollIntoView({ behavior: "smooth" });
+  const handleCTA = () => onSignup ? onSignup() : scrollToPricing();
 
   const handleSignup = () => {
     if (email.includes("@")) {
@@ -212,7 +213,7 @@ export default function Landing() {
         button:hover { opacity: 0.88; }
       `}</style>
 
-      <Nav onCTA={scrollToPricing} />
+      <Nav onCTA={scrollToPricing} onLogin={onLogin} />
 
       {/* ── HERO ── */}
       <section style={{
