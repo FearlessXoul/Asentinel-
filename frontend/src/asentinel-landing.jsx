@@ -1,5 +1,4 @@
-:import { useState, useEffect, useRef } from "react";
-
+import { useState, useEffect, useRef } from "react";
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
   bg: "#080810",
