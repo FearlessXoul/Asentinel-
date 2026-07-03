@@ -1,76 +1,27 @@
 import { useState, useRef, useEffect } from "react";
+import { DeskView } from "./asentinel-desk";
 
-// ════════════════════════════════════════════════════════════════════════════
-// AGENT MODES
-// ════════════════════════════════════════════════════════════════════════════
 const MODES = [
-  {
-    id: "oracle", label: "Oracle", icon: "◈", color: "#00FFB2",
-    desc: "Market analysis & trade thesis",
-    system: `You are Oracle, an elite market analyst and trading strategist. Analyze markets across Forex, Crypto, Stocks, Options, and Futures with precision. Be direct, specific, actionable. When analyzing setups: identify key levels, confluences, bias, and risk. Format with structure: Bias / Key Levels / Confluences / Trade Plan / Risk. If asked about current prices or live market data, use your web search tool.`,
-    tools: true,
-  },
-  {
-    id: "sniper", label: "Sniper", icon: "⊕", color: "#FF6B35",
-    desc: "Entry, SL & TP precision",
-    system: `You are Sniper, a precision trade execution specialist. Find the exact entry, stop loss, and take profit for any trade idea. Output: Entry Zone / Stop Loss / TP1 / TP2 / TP3 / Risk-Reward / Invalidation. Be ruthlessly precise. Use web search for live prices if needed.`,
-    tools: true,
-  },
-  {
-    id: "shrink", label: "Shrink", icon: "⬡", color: "#A78BFA",
-    desc: "Trading psychology & mindset",
-    system: `You are Shrink, a trading psychologist. You understand FOMO, revenge trading, overconfidence, fear, analysis paralysis. Help traders identify mental blocks, build discipline, develop a winning mindset. Be empathetic but direct. Give actionable mental frameworks and protocols.`,
-    tools: false,
-  },
-  {
-    id: "autopsy", label: "Autopsy", icon: "◎", color: "#F59E0B",
-    desc: "Trade review & mistake analysis",
-    system: `You are Autopsy, a ruthless trade post-mortem analyst. Dissect trades — wins and losses — to extract lessons. Output: What went right / What went wrong / Root cause / Pattern / What to do differently. Be clinical. Find the truth.`,
-    tools: false,
-  },
-  {
-    id: "quant", label: "Quant", icon: "∑", color: "#38BDF8",
-    desc: "Stats, edge & backtesting logic",
-    system: `You are Quant, a quantitative trading analyst. Help with: win rate math, expectancy, position sizing (Kelly, fixed fractional), backtesting logic, strategy robustness. Be precise with numbers. Use formulas when needed.`,
-    tools: false,
-  },
-  {
-    id: "risk", label: "Risk Mgr", icon: "⚠", color: "#EF4444",
-    desc: "Position sizing & exposure control",
-    system: `You are Risk Manager, a professional trading risk officer. Help traders size positions correctly, set max daily loss limits, manage portfolio exposure. Always ask for: account size, risk per trade %, current open exposure. Output: Position Size / Max Loss / Exposure / R-Multiple / Verdict. Capital preservation is the #1 job.`,
-    tools: false,
-  },
-  {
-    id: "news", label: "News", icon: "⚡", color: "#FBBF24",
-    desc: "Live macro & market news scanner",
-    system: `You are News Scanner, a macro and market intelligence agent. Use web search to find current information. When reporting news: headline, market impact (bullish/bearish/neutral for which asset), and one-line trade implication. Prioritize: central bank decisions, economic data, geopolitical events, major earnings, crypto regulatory news. Always search before answering.`,
-    tools: true,
-  },
+  { id: "oracle", label: "Oracle", icon: "◈", color: "#00FFB2", desc: "Market analysis & trade thesis", system: `You are Oracle, an elite market analyst. Analyze markets across Forex, Crypto, Stocks, Options, and Futures. Format: Bias / Key Levels / Confluences / Trade Plan / Risk.`, tools: true },
+  { id: "sniper", label: "Sniper", icon: "⊕", color: "#FF6B35", desc: "Entry, SL & TP precision", system: `You are Sniper, a precision trade execution specialist. Output: Entry Zone / Stop Loss / TP1 / TP2 / TP3 / Risk-Reward / Invalidation.`, tools: true },
+  { id: "shrink", label: "Shrink", icon: "⬡", color: "#A78BFA", desc: "Trading psychology & mindset", system: `You are Shrink, a trading psychologist. Help traders identify mental blocks, build discipline. Give actionable mental frameworks.`, tools: false },
+  { id: "autopsy", label: "Autopsy", icon: "◎", color: "#F59E0B", desc: "Trade review & mistake analysis", system: `You are Autopsy, a trade post-mortem analyst. Output: What went right / What went wrong / Root cause / What to do differently.`, tools: false },
+  { id: "quant", label: "Quant", icon: "∑", color: "#38BDF8", desc: "Stats, edge & backtesting logic", system: `You are Quant, a quantitative analyst. Help with win rate math, expectancy, position sizing, backtesting logic.`, tools: false },
+  { id: "risk", label: "Risk Mgr", icon: "⚠", color: "#EF4444", desc: "Position sizing & exposure control", system: `You are Risk Manager. Help traders size positions, set max daily loss, manage exposure. Output: Position Size / Max Loss / Exposure / Verdict.`, tools: false },
+  { id: "news", label: "News", icon: "⚡", color: "#FBBF24", desc: "Live macro & market news scanner", system: `You are News Scanner. Use web search to find macro and market news. Output: headline, market impact, trade implication. Always search first.`, tools: true },
 ];
 
-// ════════════════════════════════════════════════════════════════════════════
-// STORAGE HELPERS
-// ════════════════════════════════════════════════════════════════════════════
 async function saveData(key, value) {
   try { await window.storage.set(key, JSON.stringify(value)); } catch (e) {}
 }
 async function loadData(key, fallback) {
-  try {
-    const r = await window.storage.get(key);
-    return r ? JSON.parse(r.value) : fallback;
-  } catch (e) { return fallback; }
+  try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : fallback; } catch (e) { return fallback; }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// SHARED UI
-// ════════════════════════════════════════════════════════════════════════════
 const TypingDots = ({ color }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "10px 14px" }}>
     {[0, 1, 2].map((i) => (
-      <div key={i} style={{
-        width: 6, height: 6, borderRadius: "50%", background: color,
-        animation: `gdBounce 1.2s ease-in-out ${i * 0.2}s infinite`,
-      }} />
+      <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: color, animation: `gdBounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
     ))}
   </div>
 );
@@ -79,336 +30,175 @@ const Message = ({ msg, accentColor }) => {
   const isUser = msg.role === "user";
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", marginBottom: 12 }}>
-      <div style={{
-        maxWidth: "84%", padding: "10px 14px",
-        borderRadius: isUser ? "14px 14px 3px 14px" : "3px 14px 14px 14px",
-        background: isUser ? accentColor : "rgba(255,255,255,0.05)",
-        color: isUser ? "#000" : "#E8E8E8",
-        fontSize: 13.5, lineHeight: 1.65,
-        fontFamily: "'SF Mono', 'Fira Code', monospace",
-        border: isUser ? "none" : "1px solid rgba(255,255,255,0.08)",
-        whiteSpace: "pre-wrap", wordBreak: "break-word",
-      }}>
+      <div style={{ maxWidth: "84%", padding: "10px 14px", borderRadius: isUser ? "14px 14px 3px 14px" : "3px 14px 14px 14px", background: isUser ? accentColor : "rgba(255,255,255,0.05)", color: isUser ? "#000" : "#E8E8E8", fontSize: 13.5, lineHeight: 1.65, fontFamily: "'SF Mono','Fira Code',monospace", border: isUser ? "none" : "1px solid rgba(255,255,255,0.08)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
         {msg.content}
       </div>
     </div>
   );
 };
 
-// ════════════════════════════════════════════════════════════════════════════
-// DESK: helper math
-// ════════════════════════════════════════════════════════════════════════════
-function computeUnrealized(pos) {
-  const dir = pos.direction === "long" ? 1 : -1;
-  const pct = ((pos.currentPrice - pos.entryPrice) / pos.entryPrice) * dir;
-  const usd = pos.size * pct;
-  return { pct: pct * 100, usd };
-}
+export default function AsentinelApp({ user, onDashboard }) {
+  const [view, setView] = useState("agents");
+  const [activeMode, setActiveMode] = useState(MODES[0]);
+  const [chats, setChats] = useState({});
+  const [positions, setPositions] = useState([]);
+  const [tradeLog, setTradeLog] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [storageReady, setStorageReady] = useState(false);
+  const [prices, setPrices] = useState(null);
+  const [loadingPrices, setLoadingPrices] = useState(false);
+  const [toast, setToast] = useState(null);
+  const bottomRef = useRef(null);
+  const textareaRef = useRef(null);
 
-// Local heuristic pattern detector — flags behavioral issues from trade log
-function detectPatterns(tradeLog) {
-  const flags = [];
-  if (tradeLog.length < 2) return flags;
+  useEffect(() => {
+    Promise.all([
+      loadData("asentinel-chats-v1", {}),
+      loadData("asentinel-positions-v1", []),
+      loadData("asentinel-tradelog-v1", []),
+    ]).then(([c, p, t]) => { setChats(c); setPositions(p); setTradeLog(t); setStorageReady(true); });
+  }, []);
 
-  // Sizing up after a loss
-  let sizeUpAfterLossStreak = 0;
-  for (let i = 1; i < tradeLog.length; i++) {
-    const prev = tradeLog[i - 1];
-    const cur = tradeLog[i];
-    if (prev.result === "loss" && cur.size > prev.size) sizeUpAfterLossStreak++;
-  }
-  if (sizeUpAfterLossStreak >= 2) {
-    flags.push({
-      type: "behavior",
-      title: "You're repeating a mistake",
-      detail: `You sized up after a loss ${sizeUpAfterLossStreak} times recently. Each one risks compounding the drawdown.`,
-    });
-  }
+  useEffect(() => { if (storageReady) saveData("asentinel-chats-v1", chats); }, [chats, storageReady]);
+  useEffect(() => { if (storageReady) saveData("asentinel-positions-v1", positions); }, [positions, storageReady]);
+  useEffect(() => { if (storageReady) saveData("asentinel-tradelog-v1", tradeLog); }, [tradeLog, storageReady]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chats, loading, activeMode.id]);
 
-  // Revenge trading: re-entering same symbol within 10 min of a loss
-  let revengeCount = 0;
-  for (let i = 1; i < tradeLog.length; i++) {
-    const prev = tradeLog[i - 1];
-    const cur = tradeLog[i];
-    if (prev.result === "loss" && prev.symbol === cur.symbol && cur.openedAt - prev.closedAt < 10 * 60 * 1000) {
-      revengeCount++;
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + "px";
     }
-  }
-  if (revengeCount >= 2) {
-    flags.push({
-      type: "behavior",
-      title: "Revenge trading pattern",
-      detail: `You re-entered the same symbol within 10 minutes of a loss ${revengeCount} times. This usually means the entry wasn't planned.`,
-    });
-  }
+  }, [input]);
 
-  // Losing streak
-  const last3 = tradeLog.slice(-3);
-  if (last3.length === 3 && last3.every((t) => t.result === "loss")) {
-    flags.push({
-      type: "behavior",
-      title: "3 losses in a row",
-      detail: "Your last 3 trades all lost. Consider stepping away or cutting size before the next entry.",
-    });
-  }
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2000); };
+  const currentMessages = chats[activeMode.id] || [];
+  const totalQueries = Object.values(chats).reduce((s, m) => s + m.filter(x => x.role === "user").length, 0);
 
-  return flags;
-}
-
-// Compute 0-100 scores from real trade log data
-function computeScores(tradeLog) {
-  if (tradeLog.length === 0) {
-    return [
-      { label: "Readiness", score: 50, delta: 0 },
-      { label: "Discipline", score: 50, delta: 0 },
-      { label: "Edge", score: 50, delta: 0 },
-      { label: "Risk", score: 50, delta: 0 },
-      { label: "Momentum", score: 50, delta: 0 },
-    ];
-  }
-
-  const recent = tradeLog.slice(-20);
-  const prevWindow = tradeLog.slice(-40, -20);
-
-  const winRate = (set) => set.length ? set.filter((t) => t.result === "win").length / set.length : 0.5;
-  const avgPnl = (set) => set.length ? set.reduce((s, t) => s + (t.pnl || 0), 0) / set.length : 0;
-  const sizeUpAfterLossCount = (set) => {
-    let c = 0;
-    for (let i = 1; i < set.length; i++) {
-      if (set[i - 1].result === "loss" && set[i].size > set[i - 1].size) c++;
+  const send = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = { role: "user", content: input.trim() };
+    const newHistory = [...currentMessages, userMsg];
+    setChats((prev) => ({ ...prev, [activeMode.id]: newHistory }));
+    setInput(""); setLoading(true);
+    try {
+      const body = { model: "claude-sonnet-4-6", max_tokens: 1000, system: activeMode.system, messages: newHistory };
+      if (activeMode.tools) body.tools = [{ type: "web_search_20250305", name: "web_search" }];
+      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const data = await res.json();
+      const reply = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("") || "No response.";
+      setChats((prev) => ({ ...prev, [activeMode.id]: [...newHistory, { role: "assistant", content: reply }] }));
+    } catch (e) {
+      setChats((prev) => ({ ...prev, [activeMode.id]: [...newHistory, { role: "assistant", content: "Connection error. Try again." }] }));
     }
-    return c;
+    setLoading(false);
   };
 
-  const edgeScore = Math.round(winRate(recent) * 100);
-  const edgeScorePrev = Math.round(winRate(prevWindow) * 100);
+  const fetchPrices = async () => {
+    setLoadingPrices(true);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 400, system: "Return ONLY a valid JSON array of 4 objects: symbol (string), price (string), change (number). Assets: BTC/USD, EUR/USD, XAU/USD, SPX. No markdown.", messages: [{ role: "user", content: "Current prices now" }], tools: [{ type: "web_search_20250305", name: "web_search" }] }) });
+      const data = await res.json();
+      const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").replace(/```json|```/g, "").trim();
+      setPrices(JSON.parse(text));
+    } catch (e) { showToast("Price fetch failed"); }
+    setLoadingPrices(false);
+  };
 
-  const disciplineScore = Math.max(0, 100 - sizeUpAfterLossCount(recent) * 15);
-  const disciplinePrev = Math.max(0, 100 - sizeUpAfterLossCount(prevWindow) * 15);
+  const handleKey = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
+  const clearChat = () => { setChats((prev) => ({ ...prev, [activeMode.id]: [] })); showToast("Chat cleared"); };
 
-  const expectancy = avgPnl(recent);
-  const riskScore = Math.max(0, Math.min(100, 50 + expectancy / 5));
-  const riskPrev = Math.max(0, Math.min(100, 50 + avgPnl(prevWindow) / 5));
+  return (
+    <div style={{ minHeight: "100vh", background: "#080810", color: "#E8E8E8", fontFamily: "'SF Mono','Fira Code',monospace", display: "flex", flexDirection: "column", maxWidth: 700, margin: "0 auto" }}>
+      <style>{`@keyframes gdBounce{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-6px);opacity:1}} @keyframes gdFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}} ::-webkit-scrollbar{width:3px} textarea::placeholder{color:rgba(255,255,255,0.18)}`}</style>
 
-  const last5 = tradeLog.slice(-5);
-  const momentumScore = Math.round(winRate(last5) * 100);
+      {toast && <div style={{ position:"fixed",top:14,left:"50%",transform:"translateX(-50%)",background:"rgba(20,20,30,0.92)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"7px 16px",fontSize:11,color:"#E8E8E8",zIndex:300,animation:"gdFade 0.2s ease" }}>{toast}</div>}
 
-  const readinessScore = Math.round((disciplineScore + edgeScore) / 2);
+      {/* Header */}
+      <div style={{ padding:"13px 16px 0",borderBottom:"1px solid rgba(255,255,255,0.06)",background:"#080810",position:"sticky",top:0,zIndex:10 }}>
+        <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10 }}>
+          <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+            <div style={{ width:7,height:7,borderRadius:"50%",background:view==="desk"?"#FBBF24":activeMode.color,boxShadow:`0 0 10px ${view==="desk"?"#FBBF24":activeMode.color}99` }}/>
+            <span style={{ fontSize:9,letterSpacing:"0.2em",color:"rgba(255,255,255,0.3)",textTransform:"uppercase" }}>ASENTINEL</span>
+          </div>
+          <div style={{ display:"flex",gap:5,alignItems:"center" }}>
+            {onDashboard && <button onClick={onDashboard} style={{ background:"none",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.3)",fontSize:9,padding:"4px 9px",borderRadius:6,cursor:"pointer" }}>DASHBOARD</button>}
+            {view==="agents" && <>
+              <button onClick={fetchPrices} disabled={loadingPrices} style={{ background:"none",border:"1px solid rgba(251,191,36,0.3)",color:loadingPrices?"rgba(255,255,255,0.2)":"#FBBF24",fontSize:9,padding:"4px 9px",borderRadius:6,cursor:"pointer" }}>{loadingPrices?"…":"⚡ PRICES"}</button>
+              <button onClick={clearChat} style={{ background:"none",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.28)",fontSize:9,padding:"4px 9px",borderRadius:6,cursor:"pointer" }}>CLEAR</button>
+            </>}
+          </div>
+        </div>
+        <div style={{ display:"flex",gap:4 }}>
+          {[{id:"agents",label:"AGENTS"},{id:"desk",label:`DESK${positions.length?` · ${positions.length}`:""}`}].map((t) => (
+            <button key={t.id} onClick={() => setView(t.id)} style={{ flex:1,padding:"9px",background:"none",border:"none",borderBottom:`2px solid ${view===t.id?(t.id==="desk"?"#FBBF24":"#00FFB2"):"transparent"}`,color:view===t.id?"#E8E8E8":"rgba(255,255,255,0.3)",fontSize:11,fontWeight:700,letterSpacing:"0.08em",cursor:"pointer" }}>{t.label}</button>
+          ))}
+        </div>
+      </div>
 
-  return [
-    { label: "Readiness", score: readinessScore, delta: readinessScore - Math.round((disciplinePrev + edgeScorePrev) / 2) },
-    { label: "Discipline", score: disciplineScore, delta: disciplineScore - disciplinePrev },
-    { label: "Edge", score: edgeScore, delta: edgeScore - edgeScorePrev },
-    { label: "Risk", score: Math.round(riskScore), delta: Math.round(riskScore - riskPrev) },
-    { label: "Momentum", score: momentumScore, delta: 0 },
-  ];
-}
+      {view === "desk" ? (
+        <DeskView positions={positions} setPositions={setPositions} tradeLog={tradeLog} setTradeLog={setTradeLog} />
+      ) : (
+        <>
+          <div style={{ padding:"8px 16px",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",gap:5,overflowX:"auto",scrollbarWidth:"none" }}>
+            {MODES.map((mode) => {
+              const count = (chats[mode.id]||[]).filter(m=>m.role==="user").length;
+              const active = activeMode.id===mode.id;
+              return (
+                <button key={mode.id} onClick={()=>setActiveMode(mode)} style={{ background:active?`${mode.color}15`:"transparent",border:`1px solid ${active?mode.color:"rgba(255,255,255,0.07)"}`,color:active?mode.color:"rgba(255,255,255,0.32)",fontSize:10,padding:"4px 10px",borderRadius:20,cursor:"pointer",whiteSpace:"nowrap",letterSpacing:"0.04em",transition:"all 0.15s",display:"flex",alignItems:"center",gap:4 }}>
+                  <span style={{fontSize:11}}>{mode.icon}</span>{mode.label}
+                  {count>0&&<span style={{background:mode.color,color:"#000",borderRadius:"50%",width:13,height:13,fontSize:8,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>{count}</span>}
+                </button>
+              );
+            })}
+          </div>
 
-// ════════════════════════════════════════════════════════════════════════════
-// DESK: Position Card (feed item)
-// ════════════════════════════════════════════════════════════════════════════
-const SignalCard = ({ kind, label, title, detail, action, onAction, color }) => (
-  <div style={{
-    background: `${color}10`,
-    border: `1px solid ${color}35`,
-    borderLeft: `3px solid ${color}`,
-    borderRadius: 10,
-    padding: "12px 14px",
-    marginBottom: 10,
-  }}>
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-      <span style={{ fontSize: 9, letterSpacing: "0.1em", color, fontWeight: 700 }}>{label}</span>
-      {action && (
-        <button onClick={onAction} style={{
-          background: "none", border: `1px solid ${color}55`, color,
-          fontSize: 9, padding: "3px 9px", borderRadius: 6, cursor: "pointer", letterSpacing: "0.06em",
-        }}>{action}</button>
+          <div style={{ padding:"5px 16px",fontSize:9,color:"rgba(255,255,255,0.2)",letterSpacing:"0.05em",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+            <span>{activeMode.icon} {activeMode.desc}</span>
+            {activeMode.tools&&<span style={{color:"#00FFB2",fontSize:8,letterSpacing:"0.12em"}}>◉ LIVE WEB</span>}
+          </div>
+
+          {prices && (
+            <div style={{ padding:"8px 16px",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"grid",gridTemplateColumns:"1fr 1fr",gap:5 }}>
+              {prices.map((p,i) => (
+                <div key={i} style={{ background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:8,padding:"6px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:11 }}>
+                  <span style={{color:"rgba(255,255,255,0.45)"}}>{p.symbol}</span>
+                  <span style={{color:"#E8E8E8",fontWeight:600}}>{p.price}</span>
+                  <span style={{color:p.change>=0?"#00FFB2":"#EF4444",fontSize:10}}>{p.change>=0?"▲":"▼"} {Math.abs(p.change).toFixed(2)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ flex:1,overflowY:"auto",padding:"16px 16px 8px",minHeight:260 }}>
+            {currentMessages.length===0&&(
+              <div style={{ textAlign:"center",padding:"48px 20px",color:"rgba(255,255,255,0.09)" }}>
+                <div style={{fontSize:30,marginBottom:10}}>{activeMode.icon}</div>
+                <div style={{fontSize:10,letterSpacing:"0.14em"}}>{activeMode.label.toUpperCase()} READY</div>
+                <div style={{fontSize:9,marginTop:4,color:"rgba(255,255,255,0.06)"}}>{activeMode.desc}</div>
+              </div>
+            )}
+            {currentMessages.map((msg,i)=><Message key={i} msg={msg} accentColor={activeMode.color}/>)}
+            {loading&&(
+              <div style={{display:"flex",justifyContent:"flex-start"}}>
+                <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"3px 14px 14px 14px"}}>
+                  <TypingDots color={activeMode.color}/>
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef}/>
+          </div>
+
+          <div style={{ padding:"10px 16px 18px",borderTop:"1px solid rgba(255,255,255,0.06)",background:"#080810" }}>
+            <div style={{ display:"flex",gap:8,alignItems:"flex-end",background:"rgba(255,255,255,0.04)",border:`1px solid ${input?activeMode.color+"55":"rgba(255,255,255,0.07)"}`,borderRadius:12,padding:"9px 12px",transition:"border-color 0.2s" }}>
+              <textarea ref={textareaRef} value={input} onChange={(e)=>setInput(e.target.value)} onKeyDown={handleKey} placeholder={`Ask ${activeMode.label}…`} rows={1} style={{ flex:1,background:"none",border:"none",outline:"none",color:"#E8E8E8",fontSize:13.5,fontFamily:"inherit",resize:"none",lineHeight:1.5,minHeight:22 }}/>
+              <button onClick={send} disabled={!input.trim()||loading} style={{ background:input.trim()&&!loading?activeMode.color:"rgba(255,255,255,0.07)",border:"none",borderRadius:8,width:30,height:30,cursor:input.trim()&&!loading?"pointer":"default",color:input.trim()&&!loading?"#000":"rgba(255,255,255,0.2)",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s",flexShrink:0 }}>↑</button>
+            </div>
+            <div style={{ fontSize:9,color:"rgba(255,255,255,0.1)",marginTop:5,textAlign:"center",letterSpacing:"0.08em" }}>ENTER · SHIFT+ENTER FOR NEWLINE · MEMORY PERSISTS</div>
+          </div>
+        </>
       )}
     </div>
-    <div style={{ fontSize: 14, fontWeight: 700, color: "#E8E8E8", marginBottom: 4 }}>{title}</div>
-    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>{detail}</div>
-  </div>
-);
-
-// ════════════════════════════════════════════════════════════════════════════
-// DESK: Add Position Form
-// ════════════════════════════════════════════════════════════════════════════
-const AddPositionForm = ({ onAdd, onCancel, accent }) => {
-  const [symbol, setSymbol] = useState("BTC/USD");
-  const [direction, setDirection] = useState("long");
-  const [entryPrice, setEntryPrice] = useState("");
-  const [size, setSize] = useState("");
-  const [leverage, setLeverage] = useState("1");
-  const [thesis, setThesis] = useState("");
-  const [invalidation, setInvalidation] = useState("");
-
-  const submit = () => {
-    if (!entryPrice || !size) return;
-    onAdd({
-      id: Date.now().toString(),
-      symbol, direction,
-      entryPrice: parseFloat(entryPrice),
-      currentPrice: parseFloat(entryPrice),
-      size: parseFloat(size),
-      leverage: parseFloat(leverage) || 1,
-      thesis, invalidation,
-      openedAt: Date.now(),
-      tags: [],
-    });
-  };
-
-  const inputStyle = {
-    width: "100%", background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
-    padding: "9px 11px", color: "#E8E8E8", fontSize: 13,
-    fontFamily: "inherit", outline: "none", marginBottom: 10,
-  };
-  const labelStyle = { fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em", marginBottom: 5, display: "block" };
-
-  return (
-    <div style={{ padding: "16px 18px", animation: "gdFade 0.2s ease" }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: accent, marginBottom: 14, letterSpacing: "0.05em" }}>
-        + NEW POSITION
-      </div>
-      <label style={labelStyle}>SYMBOL</label>
-      <input style={inputStyle} value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="BTC/USD" />
-
-      <label style={labelStyle}>DIRECTION</label>
-      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-        {["long", "short"].map((d) => (
-          <button key={d} onClick={() => setDirection(d)} style={{
-            flex: 1, padding: "9px", borderRadius: 8, cursor: "pointer",
-            fontSize: 12, letterSpacing: "0.06em", fontWeight: 700,
-            background: direction === d ? (d === "long" ? "#00FFB220" : "#EF444420") : "rgba(255,255,255,0.04)",
-            border: `1px solid ${direction === d ? (d === "long" ? "#00FFB2" : "#EF4444") : "rgba(255,255,255,0.1)"}`,
-            color: direction === d ? (d === "long" ? "#00FFB2" : "#EF4444") : "rgba(255,255,255,0.4)",
-          }}>{d.toUpperCase()}</button>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", gap: 10 }}>
-        <div style={{ flex: 1 }}>
-          <label style={labelStyle}>ENTRY PRICE</label>
-          <input style={inputStyle} type="number" value={entryPrice} onChange={(e) => setEntryPrice(e.target.value)} placeholder="79520" />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label style={labelStyle}>LEVERAGE</label>
-          <input style={inputStyle} type="number" value={leverage} onChange={(e) => setLeverage(e.target.value)} placeholder="10" />
-        </div>
-      </div>
-
-      <label style={labelStyle}>SIZE (USD)</label>
-      <input style={inputStyle} type="number" value={size} onChange={(e) => setSize(e.target.value)} placeholder="16940" />
-
-      <label style={labelStyle}>WHY YOU ENTERED</label>
-      <input style={inputStyle} value={thesis} onChange={(e) => setThesis(e.target.value)} placeholder="Break of 4H resistance, volume confirmed" />
-
-      <label style={labelStyle}>INVALIDATION LEVEL</label>
-      <input style={inputStyle} value={invalidation} onChange={(e) => setInvalidation(e.target.value)} placeholder="Close below 42100" />
-
-      <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-        <button onClick={onCancel} style={{
-          flex: 1, padding: "11px", borderRadius: 8, background: "none",
-          border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)",
-          fontSize: 12, cursor: "pointer", letterSpacing: "0.05em",
-        }}>CANCEL</button>
-        <button onClick={submit} style={{
-          flex: 2, padding: "11px", borderRadius: 8, background: accent,
-          border: "none", color: "#000", fontWeight: 700,
-          fontSize: 12, cursor: "pointer", letterSpacing: "0.05em",
-        }}>OPEN POSITION</button>
-      </div>
-    </div>
   );
-};
-
-// ════════════════════════════════════════════════════════════════════════════
-// DESK: Plan Check Modal
-// ════════════════════════════════════════════════════════════════════════════
-const PlanCheckModal = ({ position, patternFlag, onClose, onUpdatePrice }) => {
-  const { pct, usd } = computeUnrealized(position);
-  const up = usd >= 0;
-  return (
-    <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
-      display: "flex", alignItems: "flex-end", zIndex: 200, animation: "gdFade 0.2s ease",
-    }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: "#0D0D14", width: "100%", maxWidth: 700, margin: "0 auto",
-        borderRadius: "18px 18px 0 0", padding: "18px 18px 28px",
-        maxHeight: "85vh", overflowY: "auto", border: "1px solid rgba(255,255,255,0.08)",
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "0.05em" }}>CHECK YOUR PLAN</span>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 18, cursor: "pointer" }}>×</button>
-        </div>
-
-        {patternFlag && (
-          <div style={{
-            background: "#FBBF2412", border: "1px solid #FBBF2440", borderLeft: "3px solid #FBBF24",
-            borderRadius: 10, padding: "12px 14px", marginBottom: 12,
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "#FBBF24", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 6 }}>
-              <span>● PATTERN DETECTED</span><span style={{ color: "rgba(255,255,255,0.3)" }}>BEFORE YOU CLICK</span>
-            </div>
-            <div style={{ fontSize: 13, color: "#E8E8E8", fontStyle: "italic", lineHeight: 1.5 }}>"{patternFlag.detail}"</div>
-          </div>
-        )}
-
-        <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.07em", marginBottom: 6 }}>◎ WHY YOU ENTERED</div>
-          <div style={{ fontSize: 13, color: "#E8E8E8", lineHeight: 1.5 }}>{position.thesis || "No thesis recorded"}</div>
-        </div>
-
-        <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.07em", marginBottom: 6 }}>⊘ INVALIDATION LEVEL</div>
-          <div style={{ fontSize: 13, color: "#E8E8E8", lineHeight: 1.5, marginBottom: 10 }}>{position.invalidation || "Not set"}</div>
-          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "9px 12px", fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-            Has this level been hit? If yes, consider exiting per your original plan.
-          </div>
-        </div>
-
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 10, marginBottom: 16,
-        }}>
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{position.symbol} · {position.direction.toUpperCase()}</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: up ? "#00FFB2" : "#EF4444" }}>
-            {up ? "+" : ""}{usd.toFixed(0)} ({up ? "+" : ""}{pct.toFixed(2)}%)
-          </span>
-        </div>
-
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onClose} style={{
-            flex: 1, padding: "12px", borderRadius: 10, background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.1)", color: "#E8E8E8", fontSize: 12, fontWeight: 700, cursor: "pointer",
-          }}>GOT IT</button>
-          <button style={{
-            flex: 1, padding: "12px", borderRadius: 10, background: "#FBBF24",
-            border: "none", color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer",
-          }}>◈ ASK COACH</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ════════════════════════════════════════════════════════════════════════════
-// DESK: Position Detail (regime shift card)
-// ════════════════════════════════════════════════════════════════════════════
-const PositionDetail = ({ position, onBack, onClose, onCheckPlan }) => {
-  const { pct, usd } = computeUnrealized(position);
-  const up = usd >= 0;
-  const ageMin = Math.round((Date.now() - position.openedAt) / 60000);
-
-  return (
-    <div style={{ animation: "gdFade 0.2s ease" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px 10px" }}>
-        <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer" }}>← Back</button>
-        <span style={{ fontSize: 10, color: "#00FFB2", letterSpacing: "0.08em" }}>● LIVE</span>
-      </div>
-      <div style={{ padding: "0 18px 18px" }}>
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", marginBottom: 4 }}>
-          OPEN POSITION · {position.symbol}
-        </div>
-        
+}
