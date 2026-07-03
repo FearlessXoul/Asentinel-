@@ -8,8 +8,6 @@ import { useState, useEffect } from "react";
 import Landing from "./asentinel-landing";
 import AuthPage from "./asentinel-auth";
 import Dashboard from "./asentinel-dashboard";
-import GodMode from "./asentinel-v3";
-
 const API = import.meta?.env?.VITE_API_URL || "http://localhost:3001";
 
 export default function App() {
