@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { DeskView } from "./asentinel-desk";
+import { DeskView } from "./asentinel-desk2";
 
 const MODES = [
   { id: "oracle", label: "Oracle", icon: "◈", color: "#00FFB2", desc: "Market analysis & trade thesis", system: `You are Oracle, an elite market analyst. Analyze markets across Forex, Crypto, Stocks, Options, and Futures. Format: Bias / Key Levels / Confluences / Trade Plan / Risk.`, tools: true },
@@ -202,4 +202,3 @@ export default function AsentinelApp({ user, onDashboard }) {
     </div>
   );
     }
-                           
