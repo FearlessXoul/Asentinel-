@@ -58,7 +58,7 @@ const Login = ({ onSuccess, onSwitch }) => {
       localStorage.setItem("as_plan", data.plan);
       onSuccess(data);
     } catch (e) {
-      setError("Connection error — try again");
+      setError("Error: " + e.message);
     } finally {
       setLoading(false);
     }
