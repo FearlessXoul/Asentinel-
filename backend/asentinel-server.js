@@ -80,7 +80,7 @@ async function initDB() {
 }
 
 // ─── MIDDLEWARE ───────────────────────────────────────────────────────────────
-app.use(cors({ origin: process.env.FRONTEND_URL || "*" }));
+app.use(cors({ origin: "*" }));
 app.use("/webhook/stripe", express.raw({ type: "application/json" }));
 app.use(express.json());
 
