@@ -40,11 +40,11 @@ export default function App() {
 
   // URL path sync
   useEffect(() => {
-    const paths = { landing: "/", auth: "/login", dashboard: "/dashboard", app: "/app" };
-    if (window.location.pathname !== paths[page]) {
-      window.history.pushState({}, "", paths[page]);
-    }
-  }, [page]);
+  const hash = window.location.hash.replace("#", "") || "landing";
+  if (["auth","dashboard","app"].includes(hash) && user) {
+    setPage(hash);
+  }
+}, []);
 
   const handleAuthSuccess = (data) => {
     setUser(data);
