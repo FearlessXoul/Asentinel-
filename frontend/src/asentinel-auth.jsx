@@ -115,26 +115,28 @@ const Signup = ({ onSuccess, onSwitch }) => {
   };
 
   const submit = async () => {
-    if (!validate()) return;
-    setLoading(true);
-    try {
-      const res = await fetch(`${API}/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (data.error === "Email already exists") return setErrors({ email: "Email already in use" });
-      if (data.error) return setErrors({ confirm: data.error });
-      localStorage.setItem("as_token", data.token);
-      localStorage.setItem("as_plan", "free");
-      onSuccess(data);
-    } catch (e) {
-      setErrors({ confirm: "Connection error — try again" });
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!validate()) return;
+  setLoading(true);
+  try { await fetch(`${API}/health`); } catch (e) {}
+  await new Promise(r => setTimeout(r, 3000));
+  try {
+    const res = await fetch(`${API}/auth/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (data.error === "Email already exists") return setErrors({ email: "Email already in use" });
+    if (data.error) return setErrors({ confirm: data.error });
+    localStorage.setItem("as_token", data.token);
+    localStorage.setItem("as_plan", "free");
+    onSuccess(data);
+  } catch (e) {
+    setErrors({ confirm: "Error: " + e.message });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div>
