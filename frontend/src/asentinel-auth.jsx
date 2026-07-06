@@ -7,7 +7,7 @@ const C = {
   text: "#E8E8E8", muted: "rgba(255,255,255,0.4)", dim: "rgba(255,255,255,0.15)",
 };
 const mono = "'SF Mono','Fira Code','Courier New',monospace";
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API = "https://asentinel-1.onrender.com";
 
 const Input = ({ label, type = "text", value, onChange, placeholder, error }) => (
   <div style={{ marginBottom: 14 }}>
