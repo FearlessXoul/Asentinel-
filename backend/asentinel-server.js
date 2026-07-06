@@ -113,6 +113,7 @@ const FREE_DAILY_LIMIT = 3;
 
 // ─── AUTH ROUTES ──────────────────────────────────────────────────────────────
 app.post("/auth/signup", async (req, res) => {
+ console.log("Signup attempt:", req.body?.email);
   const { email, password } = req.body;
   if (!email || !password || password.length < 8) {
     return res.status(400).json({ error: "Invalid email or password too short" });
