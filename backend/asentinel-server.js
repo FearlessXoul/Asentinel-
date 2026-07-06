@@ -128,10 +128,11 @@ app.post("/auth/signup", async (req, res) => {
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || "asentinel_dev_secret", { expiresIn: "30d" });
     res.json({ token, plan: "trial", trialEndsAt });
   } catch (e) {
-    if (e.message.includes("unique") || e.message.includes("duplicate")) {
-      return res.status(409).json({ error: "Email already exists" });
-    }
-    res.status(500).json({ error: "Signup failed" });
+  console.error("SIGNUP ERROR:", e);
+
+  return res.status(500).json({
+    error: e.message
+  });
   }
 });
 
