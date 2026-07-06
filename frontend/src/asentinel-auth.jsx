@@ -53,6 +53,9 @@ const Login = ({ onSuccess, onSwitch }) => {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
+
+alert("Status: " + res.status);
+alert(JSON.stringify(data));
       if (data.error) return setError("Invalid email or password");
       localStorage.setItem("as_token", data.token);
       localStorage.setItem("as_plan", data.plan);
