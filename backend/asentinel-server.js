@@ -76,6 +76,7 @@ async function initDB() {
       created_at INTEGER DEFAULT EXTRACT(EPOCH FROM NOW())
     );
   `);
+ await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at BIGINT DEFAULT 0`).catch(() => {});
   console.log("DB initialized");
 }
 
