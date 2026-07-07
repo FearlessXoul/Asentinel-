@@ -7,41 +7,39 @@ const C = {
   text: "#E8E8E8", muted: "rgba(255,255,255,0.4)", dim: "rgba(255,255,255,0.12)",
 };
 const mono = "'SF Mono','Fira Code','Courier New',monospace";
-const API = import.meta?.env?.VITE_API_URL || "http://localhost:3001";
+const API = "https://asentinel.onrender.com";
 
 const PLANS = {
   free:  { label: "FREE",  color: C.muted, price: "$0" },
-  trial: { label: "TRIAL", color: C.gold,  price: "7-day free" },
+  trial: { label: "TRIAL", color: C.gold,  price: "14-day free" },
   pro:   { label: "PRO",   color: C.green, price: "$29/mo" },
   elite: { label: "ELITE", color: C.gold,  price: "$79/mo" },
 };
 
 const AGENTS = [
-  { id: "oracle",  icon: "◈", label: "Oracle",       color: C.green,   plans: ["free","pro","elite"] },
-  { id: "sniper",  icon: "⊕", label: "Sniper",       color: "#FF6B35", plans: ["pro","elite"] },
-  { id: "shrink",  icon: "⬡", label: "Shrink",       color: C.purple,  plans: ["free","pro","elite"] },
-  { id: "autopsy", icon: "◎", label: "Autopsy",      color: C.gold,    plans: ["pro","elite"] },
-  { id: "quant",   icon: "∑", label: "Quant",        color: C.blue,    plans: ["pro","elite"] },
-  { id: "risk",    icon: "⚠", label: "Risk Manager", color: C.red,     plans: ["pro","elite"] },
+  { id: "oracle",  icon: "◈", label: "Oracle",       color: C.green,   plans: ["free","trial","pro","elite"] },
+  { id: "sniper",  icon: "⊕", label: "Sniper",       color: "#FF6B35", plans: ["trial","pro","elite"] },
+  { id: "shrink",  icon: "⬡", label: "Shrink",       color: C.purple,  plans: ["free","trial","pro","elite"] },
+  { id: "autopsy", icon: "◎", label: "Autopsy",      color: C.gold,    plans: ["trial","pro","elite"] },
+  { id: "quant",   icon: "∑", label: "Quant",        color: C.blue,    plans: ["trial","pro","elite"] },
+  { id: "risk",    icon: "⚠", label: "Risk Manager", color: C.red,     plans: ["trial","pro","elite"] },
   { id: "news",    icon: "⚡", label: "News Scanner", color: C.gold,    plans: ["elite"] },
 ];
 
 const Card = ({ children, style = {} }) => (
-  <div style={{
-    background: C.bg2, border: `1px solid ${C.border}`,
-    borderRadius: 14, padding: "20px", ...style,
-  }}>{children}</div>
+  <div style={{ background: C.bg2, border: `1px solid ${C.border}`, borderRadius: 14, padding: "20px", ...style }}>
+    {children}
+  </div>
 );
 
 const SectionLabel = ({ text }) => (
   <div style={{ fontSize: 9, letterSpacing: "0.16em", color: C.muted, marginBottom: 14 }}>{text}</div>
 );
 
-export default function Dashboard({ onLogout }) {
+export default function Dashboard({ onLogout, onOpenApp }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [telegramCopied, setTelegramCopied] = useState(false);
-  const [billingLoading, setBillingLoading] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState("");
 
   const token = localStorage.getItem("as_token");
@@ -49,8 +47,8 @@ export default function Dashboard({ onLogout }) {
   useEffect(() => {
     if (!token) return onLogout?.();
     fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.json())
-      .then((data) => { if (data.error) onLogout?.(); else setUser(data); })
+      .then(r => r.json())
+      .then(data => { if (data.error) onLogout?.(); else setUser(data); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -58,7 +56,7 @@ export default function Dashboard({ onLogout }) {
     const priceId = priceKey === "pro"
       ? import.meta?.env?.VITE_STRIPE_PRO_PRICE_ID
       : import.meta?.env?.VITE_STRIPE_ELITE_PRICE_ID;
-    if (!priceId) return alert("Stripe not configured yet");
+    if (!priceId || priceId === "placeholder") return alert("Payment coming soon! Stay tuned.");
     setUpgradeLoading(priceKey);
     try {
       const res = await fetch(`${API}/billing/checkout`, {
@@ -72,21 +70,8 @@ export default function Dashboard({ onLogout }) {
     setUpgradeLoading("");
   };
 
-  const handleManageBilling = async () => {
-    setBillingLoading(true);
-    try {
-      const res = await fetch(`${API}/billing/portal`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-    } catch (e) { alert("Error opening billing portal"); }
-    setBillingLoading(false);
-  };
-
   const copyTelegramLink = () => {
-    const link = `https://t.me/asentinelai_bot?start=connect_${token}`;
+    const link = `https://t.me/asentinel_bot?start=connect_${token}`;
     navigator.clipboard.writeText(link).then(() => {
       setTelegramCopied(true);
       setTimeout(() => setTelegramCopied(false), 2000);
@@ -100,10 +85,7 @@ export default function Dashboard({ onLogout }) {
   };
 
   if (loading) return (
-    <div style={{
-      minHeight: "100vh", background: C.bg, display: "flex",
-      alignItems: "center", justifyContent: "center", fontFamily: mono,
-    }}>
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: mono }}>
       <div style={{ fontSize: 11, color: C.muted, letterSpacing: "0.1em" }}>Loading…</div>
     </div>
   );
@@ -113,9 +95,8 @@ export default function Dashboard({ onLogout }) {
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: mono, color: C.text }}>
-      <style>{`* { box-sizing: border-box; margin: 0; padding: 0; } @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      <style>{`*{box-sizing:border-box;margin:0;padding:0} @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
-      {/* Nav */}
       <nav style={{
         padding: "0 24px", height: 54, display: "flex", alignItems: "center",
         justifyContent: "space-between", borderBottom: `1px solid ${C.border}`,
@@ -128,11 +109,10 @@ export default function Dashboard({ onLogout }) {
           <span style={{ fontSize: 9, color: C.muted, marginLeft: 4 }}>/ DASHBOARD</span>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontSize: 10, color: C.muted }}>{user?.email}</span>
-          <button onClick={() => window.location.href = "/app"} style={{
+          <button onClick={onOpenApp} style={{
             background: C.green, border: "none", color: "#000",
             padding: "5px 12px", borderRadius: 7, fontSize: 10, fontWeight: 800,
-            cursor: "pointer", fontFamily: mono, letterSpacing: "0.04em",
+            cursor: "pointer", fontFamily: mono,
           }}>OPEN APP →</button>
           <button onClick={logout} style={{
             background: "none", border: `1px solid ${C.border}`, color: C.muted,
@@ -142,6 +122,24 @@ export default function Dashboard({ onLogout }) {
       </nav>
 
       <div style={{ maxWidth: 700, margin: "0 auto", padding: "32px 20px", animation: "fadeUp 0.3s ease" }}>
+
+        {/* Trial banner */}
+        {user?.onTrial && (
+          <Card style={{ marginBottom: 16, borderColor: C.gold + "40", background: `${C.gold}08` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 11, color: C.gold, fontWeight: 700, marginBottom: 4, letterSpacing: "0.06em" }}>◆ FREE TRIAL ACTIVE</div>
+                <div style={{ fontSize: 13, color: C.text, fontWeight: 700 }}>{user.daysLeft} day{user.daysLeft !== 1 ? "s" : ""} left — full Pro access</div>
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>All 7 agents + Live Desk unlocked</div>
+              </div>
+              <button onClick={() => handleUpgrade("pro")} style={{
+                flexShrink: 0, padding: "9px 14px", borderRadius: 8,
+                background: C.gold, border: "none", color: "#000",
+                fontWeight: 800, fontSize: 11, cursor: "pointer", fontFamily: mono,
+              }}>{user.daysLeft <= 2 ? "Upgrade now!" : "Get Pro →"}</button>
+            </div>
+          </Card>
+        )}
 
         {/* Plan card */}
         <Card style={{ marginBottom: 16, borderColor: planInfo.color + "40" }}>
@@ -156,64 +154,28 @@ export default function Dashboard({ onLogout }) {
                 }}>{planInfo.label}</span>
                 <span style={{ fontSize: 13, color: planInfo.color }}>{planInfo.price}</span>
               </div>
-              {plan === "free" && (
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>
-                  3 messages/day · Oracle + Shrink only
-                </div>
-              )}
+              {plan === "free" && <div style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>3 messages/day · Oracle + Shrink only</div>}
             </div>
-            {plan !== "free" ? (
-              <button onClick={handleManageBilling} disabled={billingLoading} style={{
+            {plan === "pro" || plan === "elite" ? (
+              <button style={{
                 background: "none", border: `1px solid ${C.border}`, color: C.muted,
-                padding: "7px 14px", borderRadius: 8, fontSize: 10, cursor: "pointer",
-                fontFamily: mono, letterSpacing: "0.05em",
-              }}>{billingLoading ? "…" : "Manage billing"}</button>
-            ) : (
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => handleUpgrade("pro")} disabled={upgradeLoading === "pro"} style={{
-                  background: C.green, border: "none", color: "#000",
-                  padding: "8px 16px", borderRadius: 8, fontSize: 11, fontWeight: 800,
-                  cursor: "pointer", fontFamily: mono,
-                }}>{upgradeLoading === "pro" ? "…" : "Get Pro →"}</button>
-              </div>
+                padding: "7px 14px", borderRadius: 8, fontSize: 10, cursor: "pointer", fontFamily: mono,
+              }}>Manage billing</button>
+            ) : !user?.onTrial && (
+              <button onClick={() => handleUpgrade("pro")} style={{
+                background: C.green, border: "none", color: "#000",
+                padding: "8px 16px", borderRadius: 8, fontSize: 11, fontWeight: 800,
+                cursor: "pointer", fontFamily: mono,
+              }}>Get Pro →</button>
             )}
           </div>
         </Card>
-
-        {/* Trial banner */}
-        {user?.onTrial && (
-          <div style={{
-            background: `${C.gold}12`, border: `1px solid ${C.gold}40`,
-            borderRadius: 14, padding: "16px 20px", marginBottom: 16,
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-          }}>
-            <div>
-              <div style={{ fontSize: 11, color: C.gold, fontWeight: 700, marginBottom: 4, letterSpacing: "0.06em" }}>
-                ◆ FREE TRIAL ACTIVE
-              </div>
-              <div style={{ fontSize: 13, color: C.text, fontWeight: 700 }}>
-                {user.daysLeft} day{user.daysLeft !== 1 ? "s" : ""} left — full Pro access
-              </div>
-              <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
-                All 7 agents + Live Desk unlocked until trial ends
-              </div>
-            </div>
-            <button onClick={() => handleUpgrade("pro")} style={{
-              flexShrink: 0, padding: "9px 14px", borderRadius: 8,
-              background: C.gold, border: "none", color: "#000",
-              fontWeight: 800, fontSize: 11, cursor: "pointer",
-              fontFamily: mono, letterSpacing: "0.04em",
-            }}>
-              {user.daysLeft <= 2 ? "Upgrade now!" : "Go Pro →"}
-            </button>
-          </div>
-        )}
 
         {/* Agent access */}
         <Card style={{ marginBottom: 16 }}>
           <SectionLabel text="AGENT ACCESS" />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {AGENTS.map((a) => {
+            {AGENTS.map(a => {
               const unlocked = a.plans.includes(plan);
               return (
                 <div key={a.id} style={{
@@ -234,8 +196,7 @@ export default function Dashboard({ onLogout }) {
               );
             })}
           </div>
-
-          {plan === "free" && (
+          {plan === "free" && !user?.onTrial && (
             <div style={{ marginTop: 14, padding: "12px", background: `${C.gold}08`, border: `1px solid ${C.gold}20`, borderRadius: 10 }}>
               <div style={{ fontSize: 11, color: C.gold, marginBottom: 6 }}>Unlock all 7 agents with Pro</div>
               <div style={{ display: "flex", gap: 8 }}>
@@ -243,7 +204,7 @@ export default function Dashboard({ onLogout }) {
                   flex: 1, padding: "9px", background: C.gold, border: "none",
                   color: "#000", fontWeight: 800, fontSize: 11, borderRadius: 8,
                   cursor: "pointer", fontFamily: mono,
-                }}>Get Pro — $29/mo →</button>
+                }}>{upgradeLoading === "pro" ? "…" : "Get Pro — $29/mo →"}</button>
                 <button onClick={() => handleUpgrade("elite")} style={{
                   flex: 1, padding: "9px", background: "none", border: `1px solid ${C.gold}40`,
                   color: C.gold, fontSize: 11, borderRadius: 8, cursor: "pointer", fontFamily: mono,
@@ -253,7 +214,7 @@ export default function Dashboard({ onLogout }) {
           )}
         </Card>
 
-        {/* Telegram connect */}
+        {/* Telegram */}
         <Card style={{ marginBottom: 16 }}>
           <SectionLabel text="TELEGRAM BOT" />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
@@ -263,7 +224,7 @@ export default function Dashboard({ onLogout }) {
               </div>
               <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.6 }}>
                 {plan === "elite"
-                  ? "Use all 7 agents directly in Telegram. Copy the link below and open it on your phone."
+                  ? "Use all 7 agents directly in Telegram."
                   : "Get the Telegram bot — all 7 agents as commands, right in your DMs."}
               </div>
             </div>
@@ -273,39 +234,22 @@ export default function Dashboard({ onLogout }) {
                 background: telegramCopied ? `${C.green}20` : "none",
                 border: `1px solid ${telegramCopied ? C.green : C.border}`,
                 color: telegramCopied ? C.green : C.muted,
-                fontSize: 10, cursor: "pointer", fontFamily: mono, letterSpacing: "0.05em",
-                whiteSpace: "nowrap",
-              }}>
-                {telegramCopied ? "✓ COPIED" : "COPY LINK"}
-              </button>
+                fontSize: 10, cursor: "pointer", fontFamily: mono, whiteSpace: "nowrap",
+              }}>{telegramCopied ? "✓ COPIED" : "COPY LINK"}</button>
             ) : (
               <button onClick={() => handleUpgrade("elite")} style={{
                 flexShrink: 0, padding: "9px 14px", borderRadius: 8,
-                background: C.gold, border: "none",
-                color: "#000", fontSize: 10, fontWeight: 800, cursor: "pointer",
-                fontFamily: mono,
+                background: C.gold, border: "none", color: "#000",
+                fontSize: 10, fontWeight: 800, cursor: "pointer", fontFamily: mono,
               }}>Go Elite →</button>
             )}
           </div>
-
-          {plan === "elite" && (
-            <div style={{
-              marginTop: 12, padding: "10px 12px",
-              background: C.bg3, borderRadius: 8,
-              fontSize: 10, color: C.muted, letterSpacing: "0.04em", lineHeight: 1.8,
-            }}>
-              1. Copy the link above<br />
-              2. Open it on your phone<br />
-              3. Tap "Start" in Telegram<br />
-              4. You're connected — use /oracle, /sniper, etc.
-            </div>
-          )}
         </Card>
 
         {/* Account */}
         <Card>
           <SectionLabel text="ACCOUNT" />
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{user?.email}</div>
               <div style={{ fontSize: 10, color: C.dim }}>
@@ -323,4 +267,5 @@ export default function Dashboard({ onLogout }) {
       </div>
     </div>
   );
-}
+   }
+  
