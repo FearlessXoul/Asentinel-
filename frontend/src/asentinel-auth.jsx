@@ -7,7 +7,7 @@ const C = {
   text: "#E8E8E8", muted: "rgba(255,255,255,0.4)", dim: "rgba(255,255,255,0.15)",
 };
 const mono = "'SF Mono','Fira Code','Courier New',monospace";
-const API = "https://asentinel-1.onrender.com";
+const API = "https://asentinel.onrender.com";
 
 const Input = ({ label, type = "text", value, onChange, placeholder, error }) => (
   <div style={{ marginBottom: 14 }}>
@@ -22,8 +22,8 @@ const Input = ({ label, type = "text", value, onChange, placeholder, error }) =>
         borderRadius: 10, color: C.text, fontSize: 13, fontFamily: mono,
         outline: "none", transition: "border-color 0.2s",
       }}
-      onFocus={(e) => e.target.style.borderColor = error ? C.red : C.green}
-      onBlur={(e) => e.target.style.borderColor = error ? C.red : C.border}
+      onFocus={e => e.target.style.borderColor = error ? C.red : C.green}
+      onBlur={e => e.target.style.borderColor = error ? C.red : C.border}
     />
     {error && <div style={{ fontSize: 10, color: C.red, marginTop: 4 }}>{error}</div>}
   </div>
@@ -36,7 +36,6 @@ const Logo = () => (
   </div>
 );
 
-// ─── Login ────────────────────────────────────────────────────────────────────
 const Login = ({ onSuccess, onSwitch }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,15 +52,12 @@ const Login = ({ onSuccess, onSwitch }) => {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-
-alert("Status: " + res.status);
-alert(JSON.stringify(data));
       if (data.error) return setError("Invalid email or password");
       localStorage.setItem("as_token", data.token);
       localStorage.setItem("as_plan", data.plan);
       onSuccess(data);
     } catch (e) {
-      setError("Error: " + e.message);
+      setError("Connection error — try again");
     } finally {
       setLoading(false);
     }
@@ -74,33 +70,25 @@ alert(JSON.stringify(data));
       <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 28, letterSpacing: "-0.01em" }}>
         Log in to <span style={{ color: C.green }}>Asentinel</span>
       </h1>
-
-      <Input label="EMAIL" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" />
-      <Input label="PASSWORD" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" error={error} />
-
-      <button
-        onClick={submit} disabled={loading}
-        onKeyDown={(e) => e.key === "Enter" && submit()}
-        style={{
-          width: "100%", padding: "13px", borderRadius: 10,
-          background: loading ? "rgba(0,255,178,0.3)" : C.green,
-          border: "none", color: "#000", fontWeight: 800,
-          fontSize: 13, cursor: loading ? "default" : "pointer",
-          fontFamily: mono, letterSpacing: "0.05em", marginTop: 4,
-        }}
-      >
+      <Input label="EMAIL" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" />
+      <Input label="PASSWORD" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" error={error} />
+      <button onClick={submit} disabled={loading} onKeyDown={e => e.key === "Enter" && submit()} style={{
+        width: "100%", padding: "13px", borderRadius: 10,
+        background: loading ? "rgba(0,255,178,0.3)" : C.green,
+        border: "none", color: "#000", fontWeight: 800,
+        fontSize: 13, cursor: loading ? "default" : "pointer",
+        fontFamily: mono, letterSpacing: "0.05em", marginTop: 4,
+      }}>
         {loading ? "Logging in…" : "Log in →"}
       </button>
-
       <div style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: C.muted }}>
         No account?{" "}
-        <span onClick={onSwitch} style={{ color: C.green, cursor: "pointer" }}>Sign up free</span>
+        <span onClick={onSwitch} style={{ color: C.green, cursor: "pointer" }}>Start free trial</span>
       </div>
     </div>
   );
 };
 
-// ─── Signup ───────────────────────────────────────────────────────────────────
 const Signup = ({ onSuccess, onSwitch }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -118,26 +106,26 @@ const Signup = ({ onSuccess, onSwitch }) => {
   };
 
   const submit = async () => {
-  if (!validate()) return;
-  setLoading(true);
-  try {
-    const res = await fetch("https://asentinel-1.onrender.com/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (data.error === "Email already exists") return setErrors({ email: "Email already in use" });
-    if (data.error) return setErrors({ confirm: data.error });
-    localStorage.setItem("as_token", data.token);
-    localStorage.setItem("as_plan", "free");
-    onSuccess(data);
-  } catch (e) {
-    setErrors({ confirm: "Error: " + e.message });
-  } finally {
-    setLoading(false);
-  }
-};
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (data.error === "Email already exists") return setErrors({ email: "Email already in use" });
+      if (data.error) return setErrors({ confirm: data.error });
+      localStorage.setItem("as_token", data.token);
+      localStorage.setItem("as_plan", data.plan || "free");
+      onSuccess(data);
+    } catch (e) {
+      setErrors({ confirm: "Connection error — try again" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div>
@@ -146,32 +134,25 @@ const Signup = ({ onSuccess, onSwitch }) => {
       <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 28, letterSpacing: "-0.01em" }}>
         Start for <span style={{ color: C.green }}>free</span>
       </h1>
-
-      <Input label="EMAIL" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" error={errors.email} />
-      <Input label="PASSWORD" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" error={errors.password} />
-      <Input label="CONFIRM PASSWORD" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat password" error={errors.confirm} />
-
+      <Input label="EMAIL" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" error={errors.email} />
+      <Input label="PASSWORD" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 8 characters" error={errors.password} />
+      <Input label="CONFIRM PASSWORD" type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat password" error={errors.confirm} />
       <div style={{
         background: `${C.green}0A`, border: `1px solid ${C.green}20`,
         borderRadius: 8, padding: "10px 12px", fontSize: 11, color: C.muted, marginBottom: 16, lineHeight: 1.6,
       }}>
-        ◆ Free plan: Oracle + Shrink · 3 messages/day<br />
-        Upgrade anytime for all 7 agents + Desk
+        ◆ 14-day free trial · All 7 agents · Full access<br />
+        No card required. Upgrade anytime.
       </div>
-
-      <button
-        onClick={submit} disabled={loading}
-        style={{
-          width: "100%", padding: "13px", borderRadius: 10,
-          background: loading ? "rgba(251,191,36,0.4)" : C.gold,
-          border: "none", color: "#000", fontWeight: 800,
-          fontSize: 13, cursor: loading ? "default" : "pointer",
-          fontFamily: mono, letterSpacing: "0.05em",
-        }}
-      >
-        {loading ? "Creating account…" : "Create account →"}
+      <button onClick={submit} disabled={loading} style={{
+        width: "100%", padding: "13px", borderRadius: 10,
+        background: loading ? "rgba(251,191,36,0.4)" : C.gold,
+        border: "none", color: "#000", fontWeight: 800,
+        fontSize: 13, cursor: loading ? "default" : "pointer",
+        fontFamily: mono, letterSpacing: "0.05em",
+      }}>
+        {loading ? "Creating account…" : "Start free trial →"}
       </button>
-
       <div style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: C.muted }}>
         Have an account?{" "}
         <span onClick={onSwitch} style={{ color: C.green, cursor: "pointer" }}>Log in</span>
@@ -180,30 +161,20 @@ const Signup = ({ onSuccess, onSwitch }) => {
   );
 };
 
-// ─── Auth shell ───────────────────────────────────────────────────────────────
 export default function AuthPage({ onSuccess, onBack, defaultMode = "signup" }) {
   const [mode, setMode] = useState(defaultMode);
-
   return (
     <div style={{
       minHeight: "100vh", background: C.bg, display: "flex",
       alignItems: "center", justifyContent: "center",
       fontFamily: mono, color: C.text, padding: 24,
     }}>
-      <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        input::placeholder { color: rgba(255,255,255,0.18); }
-      `}</style>
-
-      {/* Background grid */}
+      <style>{`*{box-sizing:border-box;margin:0;padding:0} input::placeholder{color:rgba(255,255,255,0.18)}`}</style>
       <div style={{
         position: "fixed", inset: 0, zIndex: 0,
-        backgroundImage: `linear-gradient(rgba(0,255,178,0.03) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(0,255,178,0.03) 1px, transparent 1px)`,
-        backgroundSize: "40px 40px",
-        pointerEvents: "none",
+        backgroundImage: `linear-gradient(rgba(0,255,178,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,178,0.03) 1px,transparent 1px)`,
+        backgroundSize: "40px 40px", pointerEvents: "none",
       }} />
-
       <div style={{
         position: "relative", zIndex: 1,
         width: "100%", maxWidth: 400,
@@ -224,4 +195,5 @@ export default function AuthPage({ onSuccess, onBack, defaultMode = "signup" }) 
       </div>
     </div>
   );
-}
+      }
+    
