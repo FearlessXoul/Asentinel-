@@ -120,10 +120,8 @@ const Signup = ({ onSuccess, onSwitch }) => {
   const submit = async () => {
   if (!validate()) return;
   setLoading(true);
-  try { await fetch(`${API}/health`); } catch (e) {}
-  await new Promise(r => setTimeout(r, 3000));
   try {
-    const res = await fetch(`${API}/auth/signup`, {
+    const res = await fetch("https://asentinel-1.onrender.com/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
