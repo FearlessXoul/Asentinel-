@@ -1,14 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import { DeskView } from "./asentinel-desk2";
 
+const API = "https://asentinel.onrender.com";
+
 const MODES = [
-  { id: "oracle", label: "Oracle", icon: "◈", color: "#00FFB2", desc: "Market analysis & trade thesis", system: `You are Oracle, an elite market analyst. Analyze markets across Forex, Crypto, Stocks, Options, and Futures. Format: Bias / Key Levels / Confluences / Trade Plan / Risk.`, tools: true },
-  { id: "sniper", label: "Sniper", icon: "⊕", color: "#FF6B35", desc: "Entry, SL & TP precision", system: `You are Sniper, a precision trade execution specialist. Output: Entry Zone / Stop Loss / TP1 / TP2 / TP3 / Risk-Reward / Invalidation.`, tools: true },
-  { id: "shrink", label: "Shrink", icon: "⬡", color: "#A78BFA", desc: "Trading psychology & mindset", system: `You are Shrink, a trading psychologist. Help traders identify mental blocks, build discipline. Give actionable mental frameworks.`, tools: false },
-  { id: "autopsy", label: "Autopsy", icon: "◎", color: "#F59E0B", desc: "Trade review & mistake analysis", system: `You are Autopsy, a trade post-mortem analyst. Output: What went right / What went wrong / Root cause / What to do differently.`, tools: false },
-  { id: "quant", label: "Quant", icon: "∑", color: "#38BDF8", desc: "Stats, edge & backtesting logic", system: `You are Quant, a quantitative analyst. Help with win rate math, expectancy, position sizing, backtesting logic.`, tools: false },
-  { id: "risk", label: "Risk Mgr", icon: "⚠", color: "#EF4444", desc: "Position sizing & exposure control", system: `You are Risk Manager. Help traders size positions, set max daily loss, manage exposure. Output: Position Size / Max Loss / Exposure / Verdict.`, tools: false },
-  { id: "news", label: "News", icon: "⚡", color: "#FBBF24", desc: "Live macro & market news scanner", system: `You are News Scanner. Use web search to find macro and market news. Output: headline, market impact, trade implication. Always search first.`, tools: true },
+  { id: "oracle", label: "Oracle", icon: "◈", color: "#00FFB2", desc: "Market analysis & trade thesis" },
+  { id: "sniper", label: "Sniper", icon: "⊕", color: "#FF6B35", desc: "Entry, SL & TP precision" },
+  { id: "shrink", label: "Shrink", icon: "⬡", color: "#A78BFA", desc: "Trading psychology & mindset" },
+  { id: "autopsy", label: "Autopsy", icon: "◎", color: "#F59E0B", desc: "Trade review & mistake analysis" },
+  { id: "quant", label: "Quant", icon: "∑", color: "#38BDF8", desc: "Stats, edge & backtesting logic" },
+  { id: "risk", label: "Risk Mgr", icon: "⚠", color: "#EF4444", desc: "Position sizing & exposure control" },
+  { id: "news", label: "News", icon: "⚡", color: "#FBBF24", desc: "Live macro & market news scanner" },
 ];
 
 async function saveData(key, value) {
@@ -30,7 +32,16 @@ const Message = ({ msg, accentColor }) => {
   const isUser = msg.role === "user";
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", marginBottom: 12 }}>
-      <div style={{ maxWidth: "84%", padding: "10px 14px", borderRadius: isUser ? "14px 14px 3px 14px" : "3px 14px 14px 14px", background: isUser ? accentColor : "rgba(255,255,255,0.05)", color: isUser ? "#000" : "#E8E8E8", fontSize: 13.5, lineHeight: 1.65, fontFamily: "'SF Mono','Fira Code',monospace", border: isUser ? "none" : "1px solid rgba(255,255,255,0.08)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+      <div style={{
+        maxWidth: "84%", padding: "10px 14px",
+        borderRadius: isUser ? "14px 14px 3px 14px" : "3px 14px 14px 14px",
+        background: isUser ? accentColor : "rgba(255,255,255,0.05)",
+        color: isUser ? "#000" : "#E8E8E8",
+        fontSize: 13.5, lineHeight: 1.65,
+        fontFamily: "'SF Mono','Fira Code',monospace",
+        border: isUser ? "none" : "1px solid rgba(255,255,255,0.08)",
+        whiteSpace: "pre-wrap", wordBreak: "break-word",
+      }}>
         {msg.content}
       </div>
     </div>
@@ -75,20 +86,34 @@ export default function AsentinelApp({ user, onDashboard }) {
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2000); };
   const currentMessages = chats[activeMode.id] || [];
   const totalQueries = Object.values(chats).reduce((s, m) => s + m.filter(x => x.role === "user").length, 0);
+  const token = localStorage.getItem("as_token");
 
   const send = async () => {
     if (!input.trim() || loading) return;
     const userMsg = { role: "user", content: input.trim() };
     const newHistory = [...currentMessages, userMsg];
     setChats((prev) => ({ ...prev, [activeMode.id]: newHistory }));
-    setInput(""); setLoading(true);
+    setInput("");
+    setLoading(true);
     try {
-      const body = { model: "claude-sonnet-4-6", max_tokens: 1000, system: activeMode.system, messages: newHistory };
-      if (activeMode.tools) body.tools = [{ type: "web_search_20250305", name: "web_search" }];
-      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const res = await fetch(`${API}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ mode: activeMode.id, messages: newHistory }),
+      });
       const data = await res.json();
-      const reply = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("") || "No response.";
-      setChats((prev) => ({ ...prev, [activeMode.id]: [...newHistory, { role: "assistant", content: reply }] }));
+      if (data.error === "upgrade_required") {
+        setChats((prev) => ({ ...prev, [activeMode.id]: [...newHistory, { role: "assistant", content: `This agent requires a Pro or Elite plan. Upgrade from your dashboard.` }] }));
+      } else if (data.error === "daily_limit_reached") {
+        setChats((prev) => ({ ...prev, [activeMode.id]: [...newHistory, { role: "assistant", content: `You've reached your daily limit (3 messages/day on free plan). Upgrade for unlimited access.` }] }));
+      } else if (data.reply) {
+        setChats((prev) => ({ ...prev, [activeMode.id]: [...newHistory, { role: "assistant", content: data.reply }] }));
+      } else {
+        setChats((prev) => ({ ...prev, [activeMode.id]: [...newHistory, { role: "assistant", content: "Error — try again." }] }));
+      }
     } catch (e) {
       setChats((prev) => ({ ...prev, [activeMode.id]: [...newHistory, { role: "assistant", content: "Connection error. Try again." }] }));
     }
@@ -98,10 +123,20 @@ export default function AsentinelApp({ user, onDashboard }) {
   const fetchPrices = async () => {
     setLoadingPrices(true);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 400, system: "Return ONLY a valid JSON array of 4 objects: symbol (string), price (string), change (number). Assets: BTC/USD, EUR/USD, XAU/USD, SPX. No markdown.", messages: [{ role: "user", content: "Current prices now" }], tools: [{ type: "web_search_20250305", name: "web_search" }] }) });
+      const res = await fetch(`${API}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({
+          mode: "news",
+          messages: [{ role: "user", content: "Get current prices for BTC/USD, EUR/USD, Gold (XAU/USD), and SPX. Return ONLY a JSON array with fields: symbol, price (string), change (number, percent). No markdown." }],
+        }),
+      });
       const data = await res.json();
-      const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").replace(/```json|```/g, "").trim();
-      setPrices(JSON.parse(text));
+      if (data.reply) {
+        const clean = data.reply.replace(/```json|```/g, "").trim();
+        const match = clean.match(/\[[\s\S]*\]/);
+        if (match) setPrices(JSON.parse(match[0]));
+      }
     } catch (e) { showToast("Price fetch failed"); }
     setLoadingPrices(false);
   };
@@ -156,7 +191,6 @@ export default function AsentinelApp({ user, onDashboard }) {
 
           <div style={{ padding:"5px 16px",fontSize:9,color:"rgba(255,255,255,0.2)",letterSpacing:"0.05em",borderBottom:"1px solid rgba(255,255,255,0.04)",display:"flex",justifyContent:"space-between",alignItems:"center" }}>
             <span>{activeMode.icon} {activeMode.desc}</span>
-            {activeMode.tools&&<span style={{color:"#00FFB2",fontSize:8,letterSpacing:"0.12em"}}>◉ LIVE WEB</span>}
           </div>
 
           {prices && (
@@ -195,10 +229,11 @@ export default function AsentinelApp({ user, onDashboard }) {
               <textarea ref={textareaRef} value={input} onChange={(e)=>setInput(e.target.value)} onKeyDown={handleKey} placeholder={`Ask ${activeMode.label}…`} rows={1} style={{ flex:1,background:"none",border:"none",outline:"none",color:"#E8E8E8",fontSize:13.5,fontFamily:"inherit",resize:"none",lineHeight:1.5,minHeight:22 }}/>
               <button onClick={send} disabled={!input.trim()||loading} style={{ background:input.trim()&&!loading?activeMode.color:"rgba(255,255,255,0.07)",border:"none",borderRadius:8,width:30,height:30,cursor:input.trim()&&!loading?"pointer":"default",color:input.trim()&&!loading?"#000":"rgba(255,255,255,0.2)",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s",flexShrink:0 }}>↑</button>
             </div>
-            <div style={{ fontSize:9,color:"rgba(255,255,255,0.1)",marginTop:5,textAlign:"center",letterSpacing:"0.08em" }}>ENTER · SHIFT+ENTER FOR NEWLINE · MEMORY PERSISTS</div>
+            <div style={{ fontSize:9,color:"rgba(255,255,255,0.1)",marginTop:5,textAlign:"center",letterSpacing:"0.08em" }}>ENTER · SHIFT+ENTER FOR NEWLINE</div>
           </div>
         </>
       )}
     </div>
   );
-    }
+}
+  
